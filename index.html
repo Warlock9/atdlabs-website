@@ -168,6 +168,8 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--blue)}
 .form-note{grid-column:1/-1;font-size:14px;color:var(--muted)}
 .form-out{grid-column:1/-1;font-size:15px;color:var(--teal)}
 .form-out a{color:var(--teal);font-weight:600}
+.form-out.err{color:#FF9B8A}
+#send[disabled]{opacity:.6;cursor:wait;transform:none}
 @media (max-width:900px){.contact{grid-template-columns:minmax(0,1fr)}}
 @media (max-width:520px){form{grid-template-columns:minmax(0,1fr);padding:20px}}
 
@@ -467,8 +469,9 @@ footer .line{font-family:var(--mono);font-size:13px}
           </select>
         </div>
         <div class="f full"><label for="msg">Anything else? (optional)</label><textarea id="msg" name="msg" placeholder="For example: 12 tables, open 8am to 11pm"></textarea></div>
-        <button class="btn btn-primary" type="submit">Send enquiry</button>
-        <p class="form-note">Opens your email app with the message ready to send to support@atdlabs.in.</p>
+        <input type="checkbox" name="botcheck" id="botcheck" tabindex="-1" autocomplete="off" style="display:none" aria-hidden="true">
+        <button class="btn btn-primary" type="submit" id="send">Send enquiry</button>
+        <p class="form-note">We usually reply the same day.</p>
         <p class="form-out" id="form-out" hidden></p>
       </form>
     </div>
@@ -596,31 +599,69 @@ footer .line{font-family:var(--mono);font-size:13px}
 })();
 
 const EMAIL = "support@atdlabs.in";
+// Web3Forms access key (web3forms.com). Enquiries are emailed to the address the key was created with.
+const WEB3FORMS_KEY = "YOUR_ACCESS_KEY";
 
 const form = document.getElementById("enquiry");
 const out = document.getElementById("form-out");
-form.addEventListener("submit", (e) => {
+const send = document.getElementById("send");
+const say = (text, isErr) => { out.hidden = false; out.textContent = text; out.classList.toggle("err", !!isErr); };
+
+form.addEventListener("submit", async (e) => {
   e.preventDefault();
   const v = (id) => document.getElementById(id).value.trim();
   const missing = ["name", "biz", "reach"].find((id) => !v(id));
   if (missing) {
-    out.hidden = false;
-    out.textContent = "Please add your name, business name and a phone number or email so we can reply.";
+    say("Please add your name, business name and a phone number or email so we can reply.", true);
     document.getElementById(missing).focus();
     return;
   }
-  const body = [
+  if (document.getElementById("botcheck").checked) return; // spam bot
+
+  const details = [
     `Name: ${v("name")}`,
     `Business: ${v("biz")}`,
     `Phone / email: ${v("reach")}`,
-    v("city") ? `City: ${v("city")}` : "",
+    `City: ${v("city") || "-"}`,
     `Interested in: ${v("need")}`,
-    v("msg") ? `\n${v("msg")}` : ""
-  ].filter(Boolean).join("\n");
-  const url = `mailto:${EMAIL}?subject=${encodeURIComponent("Enquiry from " + v("biz"))}&body=${encodeURIComponent(body)}`;
-  out.hidden = false;
-  out.textContent = `Your email app should open now. If it doesn't, write to ${EMAIL} with these details.`;
-  location.href = url;
+    `Message: ${v("msg") || "-"}`
+  ].join("\n");
+
+  // Until the key is set, fall back to the visitor's email app.
+  if (!WEB3FORMS_KEY || WEB3FORMS_KEY === "YOUR_ACCESS_KEY") {
+    location.href = `mailto:${EMAIL}?subject=${encodeURIComponent("Enquiry from " + v("biz"))}&body=${encodeURIComponent(details)}`;
+    say(`Your email app should open now. If it doesn't, write to ${EMAIL}.`);
+    return;
+  }
+
+  send.disabled = true; send.textContent = "Sending…"; out.hidden = true;
+  try {
+    const payload = {
+      access_key: WEB3FORMS_KEY,
+      subject: `New enquiry: ${v("biz")} (${v("need")})`,
+      from_name: "ATD Labs website",
+      name: v("name"),
+      business: v("biz"),
+      contact: v("reach"),
+      city: v("city"),
+      interested_in: v("need"),
+      message: v("msg") || "-"
+    };
+    if (v("reach").includes("@")) payload.email = v("reach"); // lets you hit Reply
+    const res = await fetch("https://api.web3forms.com/submit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data.success) throw new Error(data.message || "Send failed");
+    form.reset();
+    say(`Thank you, ${payload.name}! Your enquiry has reached us. We'll contact you soon.`);
+  } catch (err) {
+    say(`Sorry, your enquiry couldn't be sent. Please try again, or email us at ${EMAIL}.`, true);
+  } finally {
+    send.disabled = false; send.textContent = "Send enquiry";
+  }
 });
 </script>
 
