@@ -365,13 +365,13 @@ footer .line{font-family:var(--mono);font-size:13px}
           <div class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 7l-5 5 5 5M16 7l5 5-5 5M14 4l-4 16"/></svg></div>
           <span class="tag">Built to order</span>
           <h3>Custom software</h3>
-          <p>Have a process that lives in registers, Excel or WhatsApp? We turn it into a simple app your team can use every day.</p>
+          <p>Have a process that lives in registers, Excel sheets or chat messages? We turn it into a simple app your team can use every day.</p>
         </article>
         <article class="svc">
           <div class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg></div>
           <span class="tag">Built to order</span>
           <h3>Business websites</h3>
-          <p>A fast, mobile-first website with your menu, services, location and a WhatsApp button that brings in enquiries.</p>
+          <p>A fast, mobile-first website with your menu, services, location and a contact form that brings in enquiries.</p>
         </article>
       </div>
     </div>
@@ -419,7 +419,7 @@ footer .line{font-family:var(--mono);font-size:13px}
         <div><span class="n">Step 1</span><div class="bar"></div><h3>We visit and listen</h3><p>We see how your business runs today and what slows you down.</p></div>
         <div><span class="n">Step 2</span><div class="bar"></div><h3>We build and set up</h3><p>Your software, your menu or data, your printer, configured for you.</p></div>
         <div><span class="n">Step 3</span><div class="bar"></div><h3>We train your team</h3><p>A short, hands-on session until your staff are comfortable using it.</p></div>
-        <div><span class="n">Step 4</span><div class="bar"></div><h3>We stay with you</h3><p>One WhatsApp number for help, updates and new features as you grow.</p></div>
+        <div><span class="n">Step 4</span><div class="bar"></div><h3>We stay with you</h3><p>One point of contact for help, updates and new features as you grow.</p></div>
       </div>
     </div>
   </section>
@@ -445,9 +445,8 @@ footer .line{font-family:var(--mono);font-size:13px}
         <div class="head" style="margin-bottom:8px">
           <p class="eyebrow">Contact</p>
           <h2>Let’s talk about your business</h2>
-          <p>Tell us what you run and what you need. We reply on WhatsApp, usually the same day.</p>
+          <p>Tell us what you run and what you need. We reply by email, usually the same day.</p>
         </div>
-        <div><div class="k">WhatsApp</div><div class="v" id="wa-text">+91 XXXXX XXXXX</div></div>
         <div><div class="k">Email</div><div class="v">support@atdlabs.in</div></div>
         <div><div class="k">Where we work</div><div class="v">All over India, on-site or online</div></div>
       </div>
@@ -455,6 +454,7 @@ footer .line{font-family:var(--mono);font-size:13px}
       <form id="enquiry" novalidate>
         <div class="f"><label for="name">Your name</label><input id="name" name="name" autocomplete="name" required></div>
         <div class="f"><label for="biz">Business name</label><input id="biz" name="biz" required></div>
+        <div class="f"><label for="reach">Phone or email</label><input id="reach" name="reach" autocomplete="email" required></div>
         <div class="f"><label for="city">City</label><input id="city" name="city" autocomplete="address-level2"></div>
         <div class="f"><label for="need">I’m interested in</label>
           <select id="need" name="need">
@@ -467,8 +467,8 @@ footer .line{font-family:var(--mono);font-size:13px}
           </select>
         </div>
         <div class="f full"><label for="msg">Anything else? (optional)</label><textarea id="msg" name="msg" placeholder="For example: 12 tables, open 8am to 11pm"></textarea></div>
-        <button class="btn btn-primary" type="submit">Send on WhatsApp</button>
-        <p class="form-note">Opens WhatsApp with your message ready to send.</p>
+        <button class="btn btn-primary" type="submit">Send enquiry</button>
+        <p class="form-note">Opens your email app with the message ready to send to support@atdlabs.in.</p>
         <p class="form-out" id="form-out" hidden></p>
       </form>
     </div>
@@ -595,33 +595,32 @@ footer .line{font-family:var(--mono);font-size:13px}
   }
 })();
 
-// Put your WhatsApp number here: country code + number, digits only (e.g. 919876543210)
-const WHATSAPP = "91XXXXXXXXXX";
+const EMAIL = "support@atdlabs.in";
 
 const form = document.getElementById("enquiry");
 const out = document.getElementById("form-out");
 form.addEventListener("submit", (e) => {
   e.preventDefault();
   const v = (id) => document.getElementById(id).value.trim();
-  if (!v("name") || !v("biz")) {
+  const missing = ["name", "biz", "reach"].find((id) => !v(id));
+  if (missing) {
     out.hidden = false;
-    out.textContent = "Please add your name and business name.";
-    (v("name") ? document.getElementById("biz") : document.getElementById("name")).focus();
+    out.textContent = "Please add your name, business name and a phone number or email so we can reply.";
+    document.getElementById(missing).focus();
     return;
   }
-  const text = [
-    `Hi ATD Labs, I'm ${v("name")} from ${v("biz")}${v("city") ? ", " + v("city") : ""}.`,
-    `I'm interested in: ${v("need")}.`,
-    v("msg") ? v("msg") : ""
+  const body = [
+    `Name: ${v("name")}`,
+    `Business: ${v("biz")}`,
+    `Phone / email: ${v("reach")}`,
+    v("city") ? `City: ${v("city")}` : "",
+    `Interested in: ${v("need")}`,
+    v("msg") ? `\n${v("msg")}` : ""
   ].filter(Boolean).join("\n");
-  const url = `https://wa.me/${WHATSAPP}?text=${encodeURIComponent(text)}`;
+  const url = `mailto:${EMAIL}?subject=${encodeURIComponent("Enquiry from " + v("biz"))}&body=${encodeURIComponent(body)}`;
   out.hidden = false;
-  out.innerHTML = "";
-  const a = document.createElement("a");
-  a.href = url; a.target = "_blank"; a.rel = "noopener";
-  a.textContent = "Open WhatsApp to send your message";
-  out.append("Your message is ready. ", a);
-  window.open(url, "_blank", "noopener");
+  out.textContent = `Your email app should open now. If it doesn't, write to ${EMAIL} with these details.`;
+  location.href = url;
 });
 </script>
 
